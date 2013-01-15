@@ -1,10 +1,10 @@
-# A tool for reading from Hygrochip humidity sensors from Linux
+# A tool for reading from Hygrochip humidity sensors under Linux
 
 This is a simple tool that queries
-[Hygrochip](http://www.hygrochip.com/) humdity sensors from Linux,
+[Hygrochip](http://www.hygrochip.com/) humidity sensors from Linux,
 particularly from the Raspberry Pi.  It was developed and tested with
 the HYT-271, but it should work with the other models that use the
-same smaple code.
+same sample code.
 
 To build, just do:
 
@@ -18,7 +18,7 @@ And then to run it:
 The first value returned is the relative humidity as a percentage, the
 second is the temperature in degrees C.
 
-By default, it uses the I2C bus name that it correct for the IO header
+By default, it uses the I2C bus name that is correct for the IO header
 pins on the Raspberry Pi revision 2.  You can supply an alternative
 bus name, e.g.
 
