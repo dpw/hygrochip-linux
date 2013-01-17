@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 	 * correspond to the full range of available bits.
 	 */
 	humidity = ((data[0] & 0x3f) << 8 | data[1]) * (100.0 / 0x3fff);
-	temp = (data[2] << 8 | (data[0] & 0xfc)) * (165.0 / 0xfffc) - 40;
+	temp = (data[2] << 8 | (data[3] & 0xfc)) * (165.0 / 0xfffc) - 40;
 
 	printf("%f %f\n", humidity, temp);
 
