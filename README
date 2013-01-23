@@ -4,7 +4,9 @@ This is a simple tool that queries
 [Hygrochip](http://www.hygrochip.com/) humidity sensors from Linux,
 particularly from the Raspberry Pi.  It was developed and tested with
 the HYT-271, but it should work with the other models that use the
-same sample code.
+same sample code.  See [my blog
+post](http://david.wragg.org/blog/2013/01/rpi-humidity.html) for more
+details.
 
 To build, just do:
 
