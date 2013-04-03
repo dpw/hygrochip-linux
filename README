@@ -1,6 +1,6 @@
 # A tool for reading from Hygrochip humidity sensors under Linux
 
-This is a simple tool that queries
+This is a simple program that queries
 [Hygrochip](http://www.hygrochip.com/) humidity sensors from Linux,
 particularly from the Raspberry Pi.  It was developed and tested with
 the HYT-271, but it should work with the other models that use the
@@ -25,3 +25,6 @@ pins on the Raspberry Pi revision 2.  You can supply an alternative
 bus name, e.g.
 
     ./hyt-read bcm2708_i2c.0
+
+The file `munin_plugin.sh` contains a script contributed by Florian
+Heiderich to use this program with the munin monitoring tool.
