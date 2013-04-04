@@ -21,7 +21,4 @@ if [ "$1" = "config" ]; then
 	exit 0
 fi
 
-echo -n "hyt_hum.value "
-$HYT_BIN | awk '{ print $1 }'
-echo -n "hyt_temp.value "
-$HYT_BIN | awk '{ print $2 }'
+$HYT_BIN | awk '{ print "hyt_hum.value " $1; print "hyt_temp.value " $2; }'
