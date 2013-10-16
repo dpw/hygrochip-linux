@@ -1,8 +1,8 @@
 # A tool for reading from Hygrochip humidity sensors under Linux
 
 This is a simple program that queries
-[Hygrochip](http://www.hygrochip.com/) humidity sensors from Linux,
-particularly from the Raspberry Pi.  It was developed and tested with
+[Hygrochip](http://www.hygrochip.com/) humidity sensors from Linux.
+It was developed and tested with
 the HYT-271, but it should work with the other models that use the
 same sample code.  See [my blog
 post](http://david.wragg.org/blog/2013/01/rpi-humidity.html) for more
@@ -15,16 +15,22 @@ To build, just do:
 And then to run it:
 
     $ ./hyt-read
-    50.582920 21.314777
+    Usage: hyt-read [ -i seconds ] [ -T | -H ] [ -b i2c bus name | device file ]
+        -b X    Open the device named X
+        -i X    Read data every X seconds
+        -T      Print only temperature
+        -H      Print only humidity
+        -h      Show this message
+
+    $ ./hyt-read i2c-1 0x28
+    36.916317 27.065556
 
 The first value returned is the relative humidity as a percentage, the
 second is the temperature in degrees C.
 
-By default, it uses the I2C bus name that is correct for the IO header
-pins on the Raspberry Pi revision 2.  You can supply an alternative
-bus name, e.g.
+You can also use the I2C bus name, i.e. on the Raspberry Pi revision 2:
 
-    ./hyt-read bcm2708_i2c.0
+    ./hyt-read -b bcm2708_i2c.0 0x28
 
 The file `munin_plugin.sh` contains a script contributed by Florian
 Heiderich to use this program with the munin monitoring tool.
