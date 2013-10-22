@@ -171,7 +171,7 @@ void usage()
 int main(int argc, char **argv)
 {
 	int fd = 0, c, interval = 0;
-	short ptemp = 1, phum = 1;
+	int ptemp = 0, phum = 0;
 	unsigned int slave = 0x28;
 
 	while ((c = getopt (argc, argv, "HTb:i:h")) != -1) {
@@ -185,12 +185,10 @@ int main(int argc, char **argv)
 			break;
 
 			case 'T':
-				phum=0;
 				ptemp=1;
 			break;
 
 			case 'H':
-				ptemp=0;
 				phum=1;
 			break;
 
@@ -200,10 +198,16 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+
 	if ((argc-optind)<1){
 		usage();
 		return 1;
 	}
+
+	/* If neither the -T not the -H option was specified, show both */
+	if (ptemp == 0 && phum == 0)
+		ptemp = phum = 1;
+
 	/* If the bus name was not specified, argv[optind] is the device file */
 	if (!fd){
 		fd=open_i2c_dev(argv[optind]);
