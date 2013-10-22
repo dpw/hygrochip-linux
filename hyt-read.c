@@ -113,6 +113,48 @@ static int open_i2c_bus(const char *name)
 	exit(1);
 }
 
+struct reading {
+	float humidity;
+	float temperature;
+};
+
+static void take_reading(int fd, struct reading *r)
+{
+	unsigned char data[4];
+	ssize_t sz;
+
+	data[0] = 0;
+	sz = write(fd, data, 1);
+	if (sz < 0)
+		die_errno("writing to i2c");
+
+	/* wait for sensor to provide reading */
+	usleep(60 * 1000);
+
+	sz = read(fd, data, 4);
+	if (sz < 0)
+		die_errno("reading from i2c");
+
+	if (sz < 4) {
+		fprintf(stderr, "short read (%d bytes)\n", (int)sz);
+		exit(1);
+	}
+
+	/*printf("%x %x %x %x\n", data[0], data[1], data[2], data[3]);*/
+
+	/*
+	 * Sensor reading are two bytes for humidity, and two bytes
+	 * for temperature, big-endian.  The top two bits of the
+	 * humidity value and the bottom two bits of the temperature
+	 * value are status bits (of undocumented purpose).  Humidity
+	 * readings range from 0 to 100%; temperature readings range
+	 * from -40 to 120 degrees C.  In both cases, the ranges
+	 * correspond to the full range of available bits.
+	 */
+	r->humidity = ((data[0] & 0x3f) << 8 | data[1]) * (100.0 / 0x3fff);
+	r->temperature = (data[2] << 8 | (data[3] & 0xfc)) * (165.0 / 0xfffc) - 40;
+}
+
 void usage()
 {
 	printf("Usage: hyt-read [ -i seconds ] [ -T | -H ] [ -b i2c bus name | device file ]\n"
@@ -129,9 +171,6 @@ int main(int argc, char **argv)
 	int fd = 0, c, interval = 0;
 	short ptemp = 1, phum = 1;
 	unsigned int slave = 0x28;
-	ssize_t sz;
-	unsigned char data[4];
-	float humidity, temp;
 
 	while ((c = getopt (argc, argv, "HTb:i:h")) != -1) {
 		switch (c) {
@@ -190,42 +229,20 @@ int main(int argc, char **argv)
 		die_errno("ioctl(I2C_SLAVE)");
 
 	/* initiate reading */
-	data[0] = 0;
 	do {
-		sz = write(fd, data, 1);
-		if (sz < 0)
-			die_errno("writing to i2c");
+		char *sep = "";
+		struct reading r;
+		take_reading(fd, &r);
 
-		/* wait for sensor to provide reading */
-		usleep(60 * 1000);
-
-		sz = read(fd, data, 4);
-		if (sz < 0)
-			die_errno("reading from i2c");
-
-		if (sz < 4) {
-			fprintf(stderr, "short read (%d bytes)\n", (int)sz);
-			return 1;
+		if (phum) {
+			printf("%f", r.humidity);
+			sep = " ";
 		}
 
-		/*printf("%x %x %x %x\n", data[0], data[1], data[2], data[3]);*/
+		if (ptemp) {
+			printf("%s%f", sep, r.temperature);
+		}
 
-		/*
-		 * Sensor reading are two bytes for humidity, and two bytes
-		 * for temperature, big-endian.  The top two bits of the
-		 * humidity value and the bottom two bits of the temperature
-		 * value are status bits (of undocumented purpose).  Humidity
-		 * readings range from 0 to 100%; temperature readings range
-		 * from -40 to 120 degrees C.  In both cases, the ranges
-		 * correspond to the full range of available bits.
-		 */
-		humidity = ((data[0] & 0x3f) << 8 | data[1]) * (100.0 / 0x3fff);
-		temp = (data[2] << 8 | (data[3] & 0xfc)) * (165.0 / 0xfffc) - 40;
-
-		if (phum)
-			printf("%f ", humidity);
-		if (ptemp)
-			printf("%f", temp);
 		printf("\n");
 
 		sleep(interval);
