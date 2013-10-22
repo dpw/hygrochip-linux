@@ -157,15 +157,23 @@ static void take_reading(int fd, struct reading *r)
 	r->temperature = (data[2] << 8 | (data[3] & 0xfc)) * (165.0 / 0xfffc) - 40;
 }
 
-void usage()
+void usage(void)
 {
-	printf("Usage: hyt-read [ -i seconds ] [ -T | -H ] [ -b i2c bus name | device file ]\n"
-		"\t-b X\tOpen the device named X\n"
+	printf("Usage: hyt-read [ -i seconds ] [ -T | -H ] [ -b I2C bus name | -d device file ]\n"
+		"\t-b X\tOpen the I2C bus named X (e.g. bcm2708_i2c.1)\n"
+		"\t-d X\tOpen the I2C device named X (e.g. /dev/i2c-0)\n"
 		"\t-i X\tRead data every X seconds\n"
 		"\t-T\tPrint only temperature\n"
 		"\t-H\tPrint only humidity\n"
 		"\t-h\tShow this message\n\n"
 	);
+	exit(1);
+}
+
+void both_b_and_d(void)
+{
+	fprintf(stderr, "Both -d and -b options present\n\n");
+	usage();
 }
 
 int main(int argc, char **argv)
@@ -174,45 +182,57 @@ int main(int argc, char **argv)
 	int ptemp = 0, phum = 0;
 	unsigned int slave = 0x28;
 
-	while ((c = getopt (argc, argv, "HTb:i:h")) != -1) {
+	while ((c = getopt (argc, argv, "HTd:b:i:h")) != -1) {
 		switch (c) {
-			case 'b':
-				fd = open_i2c_bus(optarg);
+		case 'H':
+			phum=1;
 			break;
 
-			case 'i':
-				interval=atoi(optarg);
+		case 'T':
+			ptemp=1;
 			break;
 
-			case 'T':
-				ptemp=1;
+		case 'b':
+			if (fd)
+				both_b_and_d();
+
+			fd = open_i2c_bus(optarg);
 			break;
 
-			case 'H':
-				phum=1;
+		case 'd':
+			if (fd)
+				both_b_and_d();
+
+			fd = open(optarg, O_RDWR);
+			if (fd < 0)
+				die_errno("opening %s", optarg);
+
 			break;
 
-			case 'h':
-				usage();
-				return 1;
+		case 'i':
+			interval=atoi(optarg);
+			break;
+
+		case 'h':
+			usage();
 			break;
 		}
 	}
 
-	if ((argc-optind)<1){
+	if ((argc-optind)<1) {
 		usage();
 		return 1;
+	}
+
+	/* If the bus name was not specified, argv[optind] is the device file */
+	if (!fd) {
+		fprintf(stderr, "Either the -d or -b option must be present\n\n");
+		usage();
 	}
 
 	/* If neither the -T not the -H option was specified, show both */
 	if (ptemp == 0 && phum == 0)
 		ptemp = phum = 1;
-
-	/* If the bus name was not specified, argv[optind] is the device file */
-	if (!fd){
-		fd=open_i2c_dev(argv[optind]);
-		optind++;
-	}
 
 	if (argc == optind+1) {
 		char *endptr;
