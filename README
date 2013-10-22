@@ -30,7 +30,7 @@ second is the temperature in degrees C.
 
 You can also use the I2C bus name, i.e. on the Raspberry Pi revision 2:
 
-    ./hyt-read -b bcm2708_i2c.0 0x28
+    ./hyt-read -b bcm2708_i2c.1 0x28
 
 The file `munin_plugin.sh` contains a script contributed by Florian
 Heiderich to use this program with the munin monitoring tool.
