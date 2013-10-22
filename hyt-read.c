@@ -159,21 +159,41 @@ static void take_reading(int fd, struct reading *r)
 
 void usage(void)
 {
-	printf("Usage: hyt-read [ -i seconds ] [ -T | -H ] [ -b I2C bus name | -d device file ]\n"
-		"\t-b X\tOpen the I2C bus named X (e.g. bcm2708_i2c.1)\n"
-		"\t-d X\tOpen the I2C device named X (e.g. /dev/i2c-0)\n"
-		"\t-i X\tRead data every X seconds\n"
-		"\t-T\tPrint only temperature\n"
-		"\t-H\tPrint only humidity\n"
-		"\t-h\tShow this message\n\n"
-	);
+	printf("Usage: hyt-read [ -b I2C bus name | -d device file ] [ -a I2C slave address ]\n"
+	       "                [ -i seconds ] [ -T ] [ -H ]\n"
+	       "Options:\n"
+	       "\t-b X\tOpen the I2C bus named X (e.g. bcm2708_i2c.1)\n"
+	       "\t-d X\tOpen the I2C device named X (e.g. /dev/i2c-0)\n"
+	       "\t-a X\tTarget I2C slave address X (default 0x28)\n"
+	       "\t-i X\tRead data every X seconds\n"
+	       "\t-T\tPrint only temperature\n"
+	       "\t-H\tPrint only humidity\n"
+	       "\t-h\tShow this message\n\n");
 	exit(1);
 }
 
 void both_b_and_d(void)
 {
-	fprintf(stderr, "Both -d and -b options present\n\n");
+	fprintf(stderr, "Cannot use both -d and -b options\n\n");
 	usage();
+}
+
+int parse_i2c_slave_address(char *s)
+{
+	char *endptr;
+	long n = strtol(s, &endptr, 0);
+
+	if (endptr == s || *endptr != 0) {
+		fprintf(stderr, "bad slave address '%s'\n", s);
+		exit(1);
+	}
+
+	if (n < 0x3 || n > 0x77) {
+		fprintf(stderr, "slave address %ld outside legal range\n", n);
+		exit(1);
+	}
+
+	return n;
 }
 
 int main(int argc, char **argv)
@@ -182,7 +202,7 @@ int main(int argc, char **argv)
 	int ptemp = 0, phum = 0;
 	unsigned int slave = 0x28;
 
-	while ((c = getopt (argc, argv, "HTd:b:i:h")) != -1) {
+	while ((c = getopt (argc, argv, "HTd:b:i:a:h")) != -1) {
 		switch (c) {
 		case 'H':
 			phum=1;
@@ -210,7 +230,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'i':
-			interval=atoi(optarg);
+			interval = atoi(optarg);
+			break;
+
+		case 'a':
+			slave = parse_i2c_slave_address(optarg);
 			break;
 
 		case 'h':
@@ -219,37 +243,21 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if ((argc-optind)<1) {
+	if (optind != argc) {
 		usage();
 		return 1;
 	}
 
 	/* If the bus name was not specified, argv[optind] is the device file */
 	if (!fd) {
-		fprintf(stderr, "Either the -d or -b option must be present\n\n");
+		fprintf(stderr,
+			"Either the -d or -b option must be present\n\n");
 		usage();
 	}
 
 	/* If neither the -T not the -H option was specified, show both */
 	if (ptemp == 0 && phum == 0)
 		ptemp = phum = 1;
-
-	if (argc == optind+1) {
-		char *endptr;
-		long n = strtol(argv[optind], &endptr, 0);
-
-		if (endptr == argv[optind] || *endptr != 0) {
-			fprintf(stderr, "bad slave address '%s'\n", argv[optind]);
-			return 1;
-		}
-
-		if (n < 0x3 || n > 0x77) {
-			fprintf(stderr, "slave address %ld out of range\n", n);
-			return 1;
-		}
-
-		slave = n;
-	}
 
 	if (ioctl(fd, I2C_SLAVE, slave) < 0)
 		die_errno("ioctl(I2C_SLAVE)");
