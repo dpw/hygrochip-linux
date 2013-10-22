@@ -21,4 +21,4 @@ if [ "$1" = "config" ]; then
 	exit 0
 fi
 
-$HYT_BIN | awk '{ print "hyt_hum.value " $1; print "hyt_temp.value " $2; }'
+$HYT_BIN -b bcm2708_i2c.1 | awk '{ print "hyt_hum.value " $1; print "hyt_temp.value " $2; }'
