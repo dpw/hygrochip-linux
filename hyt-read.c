@@ -35,31 +35,33 @@ static int name_file_matches(const char *dir, const char *subdir,
 			     const char *want)
 {
 	char *path;
-	char *name;
-	FILE *fp;
-	int res;
+	char *buf;
+	int fd;
+	int res = 0;
+	size_t len = strlen(want);
+	ssize_t got;
 
 	if (asprintf(&path, "%s/%s/name", dir, subdir) < 2)
 		die_alloc();
 
-	fp = fopen(path, "r");
-	if (fp == NULL)
+	fd = open(path, O_RDONLY);
+	if (fd < 0)
 		die_errno("opening %s", path);
 
-	if (fscanf(fp, "%as", &name) == 1) {
-		res = (strcmp(name, want) == 0);
-		free(name);
-	}
-	else {
-		if (ferror(fp))
-			die_errno("reading %s", path);
-
-		/* contents of file were odd */
-		res = 0;
-	}
-
-	fclose(fp);
 	free(path);
+	buf = malloc(len + 2);
+
+	got = read(fd, buf, len + 2);
+	if (got < 0)
+		die_errno("reading %s", path);
+
+	/* The file should contain a string the same length as the
+	   name, except for the trailing newline. */
+	if (got == len || (got == len + 1 && buf[len] == '\n'))
+		res = (memcmp(want, buf, len) == 0);
+
+	close(fd);
+	free(buf);
 	return res;
 }
 
