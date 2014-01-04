@@ -1,6 +1,6 @@
 #!/bin/sh
 
-HYT_BIN="/usr/local/bin/hyt-read"
+HYT_BIN="/usr/local/sbin/hyt-read"
 
 if [ "$1" = "autoconf" ]; then
 	echo yes
