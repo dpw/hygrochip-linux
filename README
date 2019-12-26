@@ -39,5 +39,10 @@ You can also specify use the I2C bus name (as reported by `i2cdetect
 
     ./hyt-read -b bcm2708_i2c.1
 
-The file `munin_plugin.sh` contains a script contributed by Florian
-Heiderich to use this program with the munin monitoring tool.
+Florian Heiderich contributed some scripts to integrate with
+monitoring systems:
+
+* `munin_plugin.sh` is for the munin monitoring tool.
+* `prometheus_exporter_hyt.sh` allows temperature and humidity to be
+  exported to prometheus via
+  https://github.com/ricoberger/script_exporter
